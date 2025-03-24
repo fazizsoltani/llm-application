@@ -187,3 +187,117 @@ terraform destroy -auto-approve
 ```
 
 ---
+
+# How would you provide a monitoring solution for the cluster?
+
+Monitoring (or observability in a broader context) can be achieved through four main areas:
+
+## 1. Metrics
+For metrics, we can use different tools at various levels (cluster, application, service, and container):
+
+- **Node-level metrics** – Use **node-exporter** to collect metrics from nodes (CPU, memory, disk, etc.).
+- **Cluster-level metrics** – Use **kube-state-metrics** to gather cluster state data (pod status, deployment state, etc.).
+- **Container-level metrics** – Use **cAdvisor** to collect container-specific metrics (resource usage, container restarts, etc.).
+- **Service-level metrics** – Use specific Prometheus exporters for different services:
+  - MySQL → `mysql-exporter`
+  - Postgres → `postgres-exporter`
+  - RabbitMQ → `RabbitMQ exporter`
+  - NVIDIA GPU → `nvidia gpu prometheus exporter`
+  - …and more for other services.
+- **Application-level metrics** – Use the **Prometheus SDK** to create custom application-level metrics and expose them through a `/metrics` endpoint.
+
+---
+
+## 2. Logs
+For logging, we can use:
+
+- **ELK Stack** (Elasticsearch, Logstash, Kibana) – For log aggregation, indexing, and visualization.
+- **Loki** – For lightweight log aggregation and querying directly from Grafana.
+
+---
+
+## 3. Traces
+For tracing, we can use:
+
+- **Jaeger** – To track request flows and identify performance bottlenecks across microservices.
+
+---
+
+## 4. Alerts
+For alerting, we can create alerts in **Alert Manager** and send notifications to different destinations like:
+
+- Email  
+- Slack  
+- PagerDuty  
+- Webhook endpoints  
+
+---
+
+## 5. Open Telekom Cloud (OTC) Solutions
+OTC also provides native solutions for monitoring and logging:
+
+- **ICAgent** – Helps collect logs and metrics, including:
+  - Host metrics  
+  - Container metrics  
+  - Node logs  
+  - Container logs  
+  - Standard output logs  
+
+- **Cloud Container Engine (CCE)** – Provides the Cloud Native Cluster Monitoring add-on to monitor custom metrics using Prometheus.
+
+---
+
+# How can the cluster be accessed without having it publicly available?
+To access the cluster API without exposing it publicly, the client must be within the same VPC as the cluster. This can be achieved by using a VPN to connect to the internal network, which will allow secure access to the API server. Alternatively, if the client is in a different VPC, you can establish VPC peering between the client and the cluster VPCs to enable secure communication.
+
+---
+
+# How do we make sure that no vulnerabilities are present?
+To ensure that no vulnerabilities are present, we need to address security at multiple layers — infrastructure, container images, cluster configuration, and application code.
+
+## 1. Scan for Vulnerabilities in Docker Images
+- Use a container vulnerability scanner (e.g., **Trivy**) to analyze Docker images before deployment and ensure no known vulnerabilities are present.  
+- Follow **Dockerfile** and **Docker image** best practices.  
+
+## 2. Follow Kubernetes Security Best Practices
+- **Pod Security** – Apply **PodSecurity Standards** to restrict container privileges.  
+- **RBAC (Role-Based Access Control)** – Follow the **Principle of Least Privilege (PoLP)** to limit permissions to the minimum required for each component.  
+
+## 3. Secure Network Communication
+- **Network Policies** – Define **NetworkPolicies** to control traffic between pods and namespaces.  
+- **TLS for Encryption** – Use **mTLS (Mutual TLS)** to encrypt communication between services.  
+
+## 4. Secrets and Sensitive Data Management
+- Store and manage sensitive data securely using a secret manager like **HashiCorp Vault**.  
+
+## 5. Automate Infrastructure Scanning
+- Use infrastructure-as-code security scanners such as **tfsec** and **Checkov** to identify misconfigurations and security issues in Terraform code.  
+
+## 6. Enforce Centralized Policy for Infrastructure
+- Implement policy-based controls (e.g., **OPA** or **Kyverno**) to enforce security standards in cloud-native environments.  
+
+## 7. Dependency Scanning
+- Use tools like **Dependabot** or **Renovate** to detect and update vulnerable dependencies, images, and modules.  
+
+## 8. Regularly Upgrade Cluster and Dependencies
+- Keep Kubernetes clusters and dependencies up to date to mitigate vulnerabilities and benefit from security patches.  
+
+## 9. Audit Logging and Monitoring
+- Enable **Kubernetes audit logs** to track API calls, access attempts, and unusual behavior for early threat detection.  
+- Set up a centralized monitoring and alerting system to detect and respond to security incidents in real time.  
+
+---
+
+# Which components need to be maintained and updated in order to keep everything up to date? How would you implement such a maintenance process?
+
+To keep everything up to date, we can leverage auto-updater tools and integrate them into our pipeline, such as GitHub or ArgoCD, to automatically check for updates when possible. Tools like Dependabot and Renovate can help identify newer versions of dependencies in Terraform, Helm charts, container images, and more, creating merge requests (MRs) for review. If the updates are appropriate, we can apply them to our codebase.
+
+For updating our environment, deployment strategies like blue-green and canary deployments can help achieve zero-downtime updates. It’s important to thoroughly test updates before applying them. Setting up a staging environment allows us to validate new versions and catch potential issues before deploying them to production.
+
+After applying updates, monitoring performance and detecting issues are crucial. We can configure alerts for failed updates and performance drops to address issues promptly.
+
+Regular backups of the cluster configuration and application state ensure that we can restore to a previous version if needed. Having a well-defined rollback strategy allows us to quickly revert to a stable state if updates cause issues.
+
+It’s also important to plan updates and maintenance in advance and notify stakeholders, such as developers and users, about planned maintenance and potential impacts. Clear communication helps set expectations and avoid disruption.
+
+While some parts of the process may need to be handled manually, automating as much as possible helps minimize human error and improve consistency.
