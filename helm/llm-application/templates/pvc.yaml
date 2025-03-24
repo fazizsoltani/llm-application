@@ -1,0 +1,31 @@
+{{- if .Values.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "llm-application.fullname" . }}
+  annotations:
+    everest.io/disk-volume-type: {{ .Values.persistence.volumeType }}
+    {{- if .Values.persistence.encryptKeyId }}
+    everest.io/crypt-key-id: {{ .Values.persistence.encryptKeyId }}
+    {{- end }}
+    {{- if .Values.persistence.volumeTags }}
+    everest.io/disk-volume-tags: {{ .Values.persistence.volumeTags }}
+    {{- end }}
+    {{- if .Values.persistence.fsType }}
+    csi.storage.k8s.io/fstype: {{ .Values.persistence.fsType }}
+    {{- end }}
+    {{- if .Values.persistence.volumeNamePrefix }}
+    everest.io/csi.volume-name-prefix: {{ .Values.persistence.volumeNamePrefix }}
+    {{- end }}
+  labels:
+    failure-domain.beta.kubernetes.io/region: {{ .Values.persistence.region }}
+    failure-domain.beta.kubernetes.io/zone: {{ .Values.persistence.zone }}
+    {{- include "llm-application.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+{{- end }}
